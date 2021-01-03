@@ -62,9 +62,9 @@ class DQNAgent(Agent):
 
     def restore(self, path: str, **kwargs):
         self.policy_network = tf.keras.models.load_model(path)
+        self.policy_network.compile()
         self.target_network = tf.keras.models.clone_model(self.policy_network)
-        self.target_network.trainable = False
-
+        
     def save(self, path: str, **kwargs):
         episode: int = kwargs.get('episode', None)
 
