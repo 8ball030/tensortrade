@@ -78,8 +78,7 @@ class CryptoDataDownload:
                 except ValueError:
                     dates_list.append(pd.to_datetime(i, format="%Y-%m-%d %I-%p"))
 
-            dates_list = [datetime.timestamp(i) for i in dates_list]
-            df['date'] = dates_list
+            df['date'] = [datetime.timestamp(i) for i in dates_list]
 
         df = df.set_index("date")
         df.columns = [name.lower() for name in df.columns]
