@@ -5,6 +5,7 @@ https://www.cryptodatadownload.com.
 import ssl
 
 import pandas as pd
+from datetime import datetime
 
 
 ssl._create_default_https_context = ssl._create_unverified_context
