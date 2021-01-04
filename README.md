@@ -44,6 +44,11 @@ You can get started testing on Google Colab or your local machine, by viewing ou
 
 TensorTrade requires Python >= 3.7 for all functionality to work as expected.
 
+## Notes for windows 10
+
+Saving models with stable baselines 3 in tensortrade using tensorflow-gpu == 2.4.0 does not work. This could be due to tf using cuda 11 instead of 10.1. 
+Downgrading to tensorflow-gpu 2.3.1 and cuda 10.1 solves this issue.
+
 ```bash
 pip install -r requirements.txt
 ```
