@@ -77,29 +77,14 @@ class A2CAgent(Agent):
         return tf.keras.Sequential([self.shared_network, critic_head])
 
     def restore(self, path: str, **kwargs):
-        actor_filename: str = kwargs.get('actor_filename', None)
-        critic_filename: str = kwargs.get('critic_filename', None)
 
-        if not actor_filename or not critic_filename:
-            raise ValueError(
-                'The `restore` method requires a directory `path`, a `critic_filename`, and an `actor_filename`.')
-
-        self.actor_network = tf.keras.models.load_model(path + actor_filename)
-        self.critic_network = tf.keras.models.load_model(path + critic_filename)
+        self.actor_network = tf.keras.models.load_model(path + "actor", compile=False)
+        self.critic_network = tf.keras.models.load_model(path + "critic", compile=False)
 
     def save(self, path: str, **kwargs):
-        episode: int = kwargs.get('episode', None)
-
-        if episode:
-            suffix = self.id + "__" + str(episode).zfill(3) + ".hdf5"
-            actor_filename = "actor_network__" + suffix
-            critic_filename = "critic_network__" + suffix
-        else:
-            actor_filename = "actor_network__" + self.id + ".hdf5"
-            critic_filename = "critic_network__" + self.id + ".hdf5"
-
-        self.actor_network.save(path + actor_filename)
-        self.critic_network.save(path + critic_filename)
+ 
+        self.actor_network.save(path + "actor")
+        self.critic_network.save(path + "critic")
 
     def get_action(self, state: np.ndarray, **kwargs) -> int:
         threshold: float = kwargs.get('threshold', 0)
@@ -181,7 +166,7 @@ class A2CAgent(Agent):
 
         memory = ReplayMemory(memory_capacity, transition_type=A2CTransition)
         episode = 0
-        steps_done = 0
+        total_steps_done = 0
         total_reward = 0
         stop_training = False
 
@@ -192,6 +177,7 @@ class A2CAgent(Agent):
 
         while episode < n_episodes and not stop_training:
             state = self.env.reset()
+            steps = 0
             done = False
 
             print('====      EPISODE ID ({}/{}): {}      ===='.format(episode + 1,
@@ -199,7 +185,8 @@ class A2CAgent(Agent):
                                                                       self.env.episode_id))
 
             while not done:
-                threshold = eps_end + (eps_start - eps_end) * np.exp(-steps_done / eps_decay_steps)
+
+                threshold = eps_end + (eps_start - eps_end) * np.exp(-total_steps_done / eps_decay_steps)
                 action = self.get_action(state, threshold=threshold)
                 next_state, reward, done, _ = self.env.step(action)
 
@@ -210,7 +197,7 @@ class A2CAgent(Agent):
 
                 state = next_state
                 total_reward += reward
-                steps_done += 1
+                total_steps_done += 1
 
                 if len(memory) < batch_size:
                     continue
@@ -220,9 +207,11 @@ class A2CAgent(Agent):
                                              learning_rate,
                                              discount_factor,
                                              entropy_c)
-
-                if n_steps and steps_done >= n_steps:
+                
+                if steps >= n_steps:
                     done = True
+
+                if episode >= n_episodes:
                     stop_training = True
 
             is_checkpoint = save_every and episode % save_every == 0
@@ -232,6 +221,6 @@ class A2CAgent(Agent):
 
             episode += 1
 
-        mean_reward = total_reward / steps_done
+        mean_reward = total_reward / total_steps_done
 
         return mean_reward
